@@ -1,12 +1,15 @@
 #lang racket
 
-(require 
-  redex/reduction-semantics)
+(require
+  redex/reduction-semantics
+  (only-in rackunit check)
+  (only-in racket/set set=?))
 
-(provide 
-  check
-  test-true)
+(provide
+  test-redex-equal
+  test-redex-set=?)
 
-(define-syntax-rule (check e1 e2) (test-equal (term e1) (term e2)))
-
-(define-syntax-rule (test-true e) (test-predicate values e))
+(define-syntax-rule (test-redex-equal e1 e2)
+  (test-equal (term e1) (term e2)))
+(define-syntax-rule (test-redex-set=? e1 e2)
+  (check set=? (list->set (term e1)) (list->set (term e2))))

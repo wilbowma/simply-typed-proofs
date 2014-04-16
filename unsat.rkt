@@ -42,9 +42,9 @@
    ,(foldr (λ (α A) (term (∀ ,α ,A))) (term (not A)) (term (gather-αs A)))])
 
 (module+ test
-  (check (unsat-quantify α) (∀ α (not α)))
-  (check (unsat-quantify (or α (not α))) (∀ α (not (or α (not α)))))
-  (check (unsat-quantify (or α_1 (not α_0))) (∀ α_0 (∀ α_1 (not (or α_1 (not α_0)))))))
+  (test-redex-equal (unsat-quantify α) (∀ α (not α)))
+  (test-redex-equal (unsat-quantify (or α (not α))) (∀ α (not (or α (not α)))))
+  (test-redex-equal (unsat-quantify (or α_1 (not α_0))) (∀ α_0 (∀ α_1 (not (or α_1 (not α_0)))))))
 
 ;;------------------------------------------------------------------------
 
@@ -91,18 +91,19 @@
    (verify-formula Δ (∀ α A_0))])
 
 (module+ test
-  (test-true (judgment-holds (verify-formula mt T)))
-  (test-true (judgment-holds (verify-formula mt F)))
-  (test-true (judgment-holds (verify-formula (α mt) α)))
-  (test-true (judgment-holds (verify-formula (α mt) T)))
-  (test-true (judgment-holds (verify-formula (α mt) (and T α))))
-  (test-true (judgment-holds (verify-formula (α mt) (or T F))))
-  (test-true (judgment-holds (verify-formula (α mt) (not (or α F))))))
+  (require (only-in rackunit check-true))
+  (check-true (judgment-holds (verify-formula mt T)))
+  (check-true (judgment-holds (verify-formula mt F)))
+  (check-true (judgment-holds (verify-formula (α mt) α)))
+  (check-true (judgment-holds (verify-formula (α mt) T)))
+  (check-true (judgment-holds (verify-formula (α mt) (and T α))))
+  (check-true (judgment-holds (verify-formula (α mt) (or T F))))
+  (check-true (judgment-holds (verify-formula (α mt) (not (or α F))))))
 
 ;;------------------------------------------------------------------------
 
 (define-syntax-rule (verifier-unsat proof formula)
-  (test-predicate values (judgment-holds (verify-unsat-q proof formula))))
+  (judgment-holds (verify-unsat-q proof formula)))
 
 (define-judgment-form
   verify-unsatL
@@ -128,10 +129,10 @@
    (verify-unsat Δ (Λ (α) p) (∀ α φ))])
 
 (module+ test
-  (test-true
+  (check-true
     (judgment-holds (verify-unsat mt (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
                                   (∀ α (not (and α (not α)))))))
-  (test-true (judgment-holds
+  (check-true (judgment-holds
     (verify-unsat
       mt
       (Λ (α_0) (Λ (α_1) (λ (x : (and (or α_0 α_1) (and (not α_0) (not α_1))))
@@ -142,7 +143,7 @@
                              (x_1 ((snd (snd x)) x_1))
                              ))))
       (∀ α_0 (∀ α_1 (not (and (or α_0 α_1) (and (not α_0) (not α_1)))))))))
-  (test-true (judgment-holds
+  (check-true (judgment-holds
     (verify-unsat
       mt
       (Λ (α_0) (Λ (α_1) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
@@ -153,12 +154,12 @@
                              (x_1 ((snd x) x_1))))))
       (∀ α_0 (∀ α_1 (not (and (and (or (not α_0) α_1) α_0) (not α_1))))))))
 
-  (verifier-unsat (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
-                  (and α (not α)))
-  (verifier-unsat (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
-                                       (case (fst (fst x)) of
-                                         ;; not α_0
-                                         (x_1 (x_1 (snd (fst x))))
-                                         ;; α_1
-                                         (x_1 ((snd x) x_1))))))
-                  (and (and (or (not α_0) α_1) α_0) (not α_1))))
+  (check-true (verifier-unsat (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
+                   (and α (not α))))
+  (check-true (verifier-unsat (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+                                             (case (fst (fst x)) of
+                                               ;; not α_0
+                                               (x_1 (x_1 (snd (fst x))))
+                                               ;; α_1
+                                               (x_1 ((snd x) x_1))))))
+                   (and (and (or (not α_0) α_1) α_0) (not α_1)))))

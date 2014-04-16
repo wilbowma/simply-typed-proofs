@@ -7,6 +7,7 @@
 
 (provide
   sat-proofL
+  sat-proof-size
   ;; qsat is a bad name
   qsat-assign
   qsat-subst
@@ -21,6 +22,24 @@
 (define-extended-language sat-proofL base-proofL
   (p (pack (c p)) e)
   (φ (∃ α φ) A))
+
+(define-metafunction sat-proofL
+  sat-proof-size : p -> natural
+  [(sat-proof-size (pack (c p)))
+   ,(add1 (term (sat-proof-size p)))]
+  [(sat-proof-size e)
+   (base-proof-size e)])
+
+(define-metafunction sat-proofL
+  qsat-formula-size : φ -> natural
+  [(qsat-formula-size (∃ α φ))
+   ,(add1 (term (qsat-formula-size φ)))]
+  [(qsat-formula-size A)
+   (formula-size A)])
+
+(module+ test
+  (test-redex-equal (sat-proof-size (pack (T true))) 2)
+  (test-redex-equal (qsat-formula-size (∃ α α)) 2))
 
 (define-metafunction sat-proofL
   qsat-assign : α c φ -> φ
@@ -41,16 +60,16 @@
    ,(foldr (λ (α A) (term (∃ ,α ,A))) (term A) (term (gather-αs A)))])
 
 (module+ test
-  (check (sat-quantify (not α)) (∃ α (not α)))
-  (check (sat-quantify (or α (not α))) (∃ α (or α (not α))))
-  (check (sat-quantify (or α_1 (not α_0))) (∃ α_0 (∃ α_1 (or α_1 (not α_0))))))
+  (test-redex-equal (sat-quantify (not α)) (∃ α (not α)))
+  (test-redex-equal (sat-quantify (or α (not α))) (∃ α (or α (not α))))
+  (test-redex-equal (sat-quantify (or α_1 (not α_0))) (∃ α_0 (∃ α_1 (or α_1 (not α_0))))))
 
 ;;------------------------------------------------------------------------ 
 
 (define-union-language verify-satL base-verifyL sat-proofL)
 
 (define-syntax-rule (verifier-sat proof formula)
-  (test-predicate values (judgment-holds (verify-sat-q proof formula))))
+  (judgment-holds (verify-sat-q proof formula)))
 
 (define-judgment-form
   verify-satL
@@ -75,20 +94,21 @@
    (verify-sat (pack (c p)) (∃ α φ))])
 
 (module+ test
-  (test-true
+  (require (only-in rackunit check-true))
+  (check-true
     (judgment-holds (verify-sat (pack (T (inj true F))) (∃ α (or α F)))))
-  (test-true
+  (check-true
     (judgment-holds (verify-sat (pack (F (λ (x : F) x))) (∃ α (not α)))))
-  (test-true
+  (check-true
     (judgment-holds (verify-sat (pack (T true)) (∃ α α))))
 
 
-  (test-true
+  (check-true
     (judgment-holds (verify-sat (pack (F (inj F (λ (x : F) x))))
                             (∃ α (or α (not α))))))
-  (test-true
+  (check-true
     (judgment-holds (verify-sat (pack (T (inj true (not T))))
                             (∃ α (or α (not α))))))
 
-  (verifier-sat (pack (F (inj F (λ (x : F) x)))) (or α (not α)))
-  (verifier-sat (pack (F (λ (x : (and F (not F))) ((snd x) (fst x))))) (not (and α (not α)))))
+  (check-true (verifier-sat (pack (F (inj F (λ (x : F) x)))) (or α (not α))))
+  (check-true (verifier-sat (pack (F (λ (x : (and F (not F))) ((snd x) (fst x))))) (not (and α (not α))))))

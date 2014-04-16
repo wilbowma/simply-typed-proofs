@@ -62,9 +62,10 @@
 (module+ test
   (test-redex-equal (sat-quantify (not α)) (∃ α (not α)))
   (test-redex-equal (sat-quantify (or α (not α))) (∃ α (or α (not α))))
-  (test-redex-equal (sat-quantify (or α_1 (not α_0))) (∃ α_0 (∃ α_1 (or α_1 (not α_0))))))
+  (test-redex-equal
+    (sat-quantify (or α_1 (not α_0))) (∃ α_0 (∃ α_1 (or α_1 (not α_0))))))
 
-;;------------------------------------------------------------------------ 
+;;------------------------------------------------------------------------
 
 (define-union-language verify-satL base-verifyL sat-proofL)
 
@@ -111,4 +112,7 @@
                             (∃ α (or α (not α))))))
 
   (check-true (verifier-sat (pack (F (inj F (λ (x : F) x)))) (or α (not α))))
-  (check-true (verifier-sat (pack (F (λ (x : (and F (not F))) ((snd x) (fst x))))) (not (and α (not α))))))
+  (check-true
+    (verifier-sat
+      (pack (F (λ (x : (and F (not F))) ((snd x) (fst x)))))
+      (not (and α (not α))))))

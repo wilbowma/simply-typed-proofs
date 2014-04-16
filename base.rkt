@@ -264,14 +264,15 @@
     (judgment-holds (verify-base mt (λ (x : (and T F)) (snd x))
                                    (not (and T F)))))
   (check-true
-    (judgment-holds (verify-base mt
-                                 (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
-                                       (case (fst (fst x)) of
-                                         ;; not α_0
-                                         (x_1 (x_1 (snd (fst x))))
-                                         ;; α_1
-                                         (x_1 ((snd x) x_1))))
-                                   (not (and (and (or (not α_0) α_1) α_0) (not α_1)))))))
+    (judgment-holds 
+      (verify-base mt
+        (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+           (case (fst (fst x)) of
+             ;; not α_0
+             (x_1 (x_1 (snd (fst x))))
+             ;; α_1
+             (x_1 ((snd x) x_1))))
+        (not (and (and (or (not α_0) α_1) α_0) (not α_1)))))))
 
 ;;------------------------------------------------------------------------
 

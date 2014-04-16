@@ -39,12 +39,15 @@
 (define-metafunction unsat-proofL
   unsat-quantify : A -> φ
   [(unsat-quantify A)
-   ,(foldr (λ (α A) (term (∀ ,α ,A))) (term (not A)) (term (gather-αs A)))])
+   ,(foldr (λ (α A) (term (∀ ,α ,A)))
+           (term (not A)) (term (gather-αs A)))])
 
 (module+ test
   (test-redex-equal (unsat-quantify α) (∀ α (not α)))
-  (test-redex-equal (unsat-quantify (or α (not α))) (∀ α (not (or α (not α)))))
-  (test-redex-equal (unsat-quantify (or α_1 (not α_0))) (∀ α_0 (∀ α_1 (not (or α_1 (not α_0)))))))
+  (test-redex-equal (unsat-quantify (or α (not α)))
+                    (∀ α (not (or α (not α)))))
+  (test-redex-equal (unsat-quantify (or α_1 (not α_0)))
+                    (∀ α_0 (∀ α_1 (not (or α_1 (not α_0)))))))
 
 ;;------------------------------------------------------------------------
 
@@ -130,36 +133,42 @@
 
 (module+ test
   (check-true
-    (judgment-holds (verify-unsat mt (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
-                                  (∀ α (not (and α (not α)))))))
-  (check-true (judgment-holds
-    (verify-unsat
-      mt
-      (Λ (α_0) (Λ (α_1) (λ (x : (and (or α_0 α_1) (and (not α_0) (not α_1))))
-                           (case (fst x) of
-                             ;; α_0
-                             (x_1 ((fst (snd x)) x_1))
-                             ;; α_1 
-                             (x_1 ((snd (snd x)) x_1))
-                             ))))
-      (∀ α_0 (∀ α_1 (not (and (or α_0 α_1) (and (not α_0) (not α_1)))))))))
-  (check-true (judgment-holds
-    (verify-unsat
-      mt
-      (Λ (α_0) (Λ (α_1) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+    (judgment-holds
+      (verify-unsat mt (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
+                    (∀ α (not (and α (not α)))))))
+  (check-true
+    (judgment-holds
+      (verify-unsat
+        mt
+        (Λ (α_0) (Λ (α_1) (λ (x : (and (or α_0 α_1) (and (not α_0) (not α_1))))
+                             (case (fst x) of
+                               ;; α_0
+                               (x_1 ((fst (snd x)) x_1))
+                               ;; α_1
+                               (x_1 ((snd (snd x)) x_1))))))
+        (∀ α_0 (∀ α_1 (not (and (or α_0 α_1) (and (not α_0) (not α_1)))))))))
+  (check-true
+    (judgment-holds
+      (verify-unsat
+        mt
+        (Λ (α_0) (Λ (α_1) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+                             (case (fst (fst x)) of
+                               ;; not α_0
+                               (x_1 (x_1 (snd (fst x))))
+                               ;; α_1
+                               (x_1 ((snd x) x_1))))))
+        (∀ α_0 (∀ α_1 (not (and (and (or (not α_0) α_1) α_0) (not α_1))))))))
+
+  (check-true
+    (verifier-unsat
+      (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
+      (and α (not α))))
+  (check-true
+    (verifier-unsat
+      (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
                            (case (fst (fst x)) of
                              ;; not α_0
                              (x_1 (x_1 (snd (fst x))))
                              ;; α_1
                              (x_1 ((snd x) x_1))))))
-      (∀ α_0 (∀ α_1 (not (and (and (or (not α_0) α_1) α_0) (not α_1))))))))
-
-  (check-true (verifier-unsat (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
-                   (and α (not α))))
-  (check-true (verifier-unsat (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
-                                             (case (fst (fst x)) of
-                                               ;; not α_0
-                                               (x_1 (x_1 (snd (fst x))))
-                                               ;; α_1
-                                               (x_1 ((snd x) x_1))))))
-                   (and (and (or (not α_0) α_1) α_0) (not α_1)))))
+      (and (and (or (not α_0) α_1) α_0) (not α_1)))))

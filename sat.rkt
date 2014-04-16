@@ -8,7 +8,8 @@
 (provide
   sat-proofL
   sat-proof-size
-  ;; qsat is a bad name
+  ;; TODO: qsat is a bad name
+  qsat-formula-size
   qsat-assign
   qsat-subst
   sat-quantify

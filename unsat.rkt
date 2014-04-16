@@ -7,6 +7,9 @@
 
 (provide
   unsat-proofL
+  unsat-proof-size
+  ;; TODO: qsat is a bad name
+  qunsat-formula-size
   qunsat-assign
   qunsat-subst
   unsat-quantify
@@ -22,6 +25,24 @@
   ;; TODO: remove (α) from Λ; unnecessary annotation
   (p (Λ (α) p) e)
   (φ (∀ α φ) (not A)))
+
+(define-metafunction unsat-proofL
+  unsat-proof-size : p -> natural
+  [(unsat-proof-size (Λ (α) p))
+   (plus 1 (unsat-proof-size p))]
+  [(unsat-proof-size e)
+   (base-proof-size e)])
+
+(define-metafunction unsat-proofL
+  qunsat-formula-size : φ -> natural
+  [(qunsat-formula-size (∀ α φ))
+   (plus 1 (qunsat-formula-size φ))]
+  [(qunsat-formula-size A)
+   (formula-size A)])
+
+(module+ test
+  (test-redex-equal (unsat-proof-size (Λ (α) true)) 2)
+  (test-redex-equal (qunsat-formula-size (∀ α (not α))) 3))
 
 (define-metafunction unsat-proofL
   qunsat-assign : α c φ -> φ

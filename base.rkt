@@ -8,6 +8,8 @@
   )
 
 (provide
+  plus
+
   closed-formulasL
   land
   lor
@@ -15,7 +17,6 @@
   true?
   reduce-formula
   gather-αs
-  plus
 
   sat-formulasL
   sat?
@@ -36,32 +37,52 @@
 
 ;;------------------------------------------------------------------------
 
+;; A (base) language of closed boolean formulas
 (define-language closed-formulasL
   (c T F)
   (A c (and A A) (or A A) (not A)))
 
+;; Language-level addition
+(define-metafunction closed-formulasL
+  plus : natural ... -> natural
+  [(plus natural_0 ... ) ,(apply + (term (natural_0 ...)))])
+
+;; A language-level logical and
 (define-metafunction closed-formulasL
   land : c c -> c
   [(land T T) T]
   [(land c_0 c_1) F])
+(module+ test
+  (test-redex-equal (land T F) F)
+  (test-redex-equal (land T T) T))
 
+;; A language-level logical or
 (define-metafunction closed-formulasL
   lor : c c -> c
   [(lor T c_1) T]
   [(lor c_0 T) T]
   [(lor c_0 c_1) F])
 
+;; A language-level logical not
 (define-metafunction closed-formulasL
   lnot : c -> c
   [(lnot T) F]
   [(lnot F) T])
 
+;; Convert language-level truth to meta-level truth
 (define-metafunction closed-formulasL
   true? : A -> #t or #f
   [(true? T) #t]
   [(true? F) #f]
   [(true? A) (true? (reduce-formula A))])
+(module+ test
+  (test-redex-equal (true? T) #t)
+  (test-redex-equal (true? (and T T)) #t)
+  (test-redex-equal (true? (and T F)) #f)
+  (test-redex-equal (true? (or F T)) #t)
+  (test-redex-equal (true? (not (and T F))) #t))
 
+;; Evaluate a closed boolean formula to language-level truth
 (define-metafunction closed-formulasL
   reduce-formula : A -> c
   [(reduce-formula T) T]
@@ -72,33 +93,23 @@
    (lor (reduce-formula A_1) (reduce-formula A_2))]
   [(reduce-formula (not A))
    (lnot (reduce-formula A))])
-
 (module+ test
-  (test-redex-equal (land T F) F)
-  (test-redex-equal (land T T) T)
-
   (test-redex-equal (reduce-formula T) T)
   (test-redex-equal (reduce-formula (and T T)) T)
   (test-redex-equal (reduce-formula (and F T)) F)
-  (test-redex-equal (reduce-formula (or F T)) T)
-
-  (test-redex-equal (true? T) #t)
-  (test-redex-equal (true? (and T T)) #t)
-  (test-redex-equal (true? (and T F)) #f)
-  (test-redex-equal (true? (or F T)) #t)
-  (test-redex-equal (true? (not (and T F))) #t))
+  (test-redex-equal (reduce-formula (or F T)) T))
 
 ;;------------------------------------------------------------------------
 
+;; A language of open boolean formulas, i.e., formulas with variables in
+;; the clauses
 (define-extended-language sat-formulasL closed-formulasL
   (α (variable-prefix α))
   (γ ((α c) ...))
   (A .... α))
 
-(define-metafunction sat-formulasL
-  plus : natural ... -> natural
-  [(plus natural_0 ... ) ,(apply + (term (natural_0 ...)))])
-
+;; The size of an open formula is roughly equal to the number of
+;; variables plus the number of clauses. Formally:
 (define-metafunction sat-formulasL
   formula-size : A -> natural
   [(formula-size T) 1]
@@ -110,7 +121,6 @@
    (plus (formula-size A_1) (formula-size A_2))]
   [(formula-size (not A))
    (plus 1 (formula-size A))])
-
 (module+ test
   (test-redex-equal (formula-size T) 1)
   (test-redex-equal (formula-size F) 1)
@@ -118,6 +128,7 @@
   (test-redex-equal (formula-size (or T F)) 2)
   (test-redex-equal (formula-size (not T)) 2))
 
+;; Gather the free variables of a formula
 (define-metafunction sat-formulasL
   gather-αs : A -> (α ...)
   [(gather-αs T) ()]
@@ -129,7 +140,6 @@
    (union (gather-αs A_0) (gather-αs A_1))]
   [(gather-αs (not A_0))
    (gather-αs A_0)])
-
 (module+ test
   (test-redex-set=? (gather-αs (or α_0 α_1)) (α_1 α_0))
   (test-redex-set=? (gather-αs (and α_0 α_1)) (α_1 α_0))
@@ -138,39 +148,46 @@
 
 (define α? (redex-match sat-formulasL α))
 
+;; #t iff the formula A is satisfiable with the assignment γ
 (define-metafunction sat-formulasL
   sat? : γ A -> #f or #t
   ;; assumes dom(γ) is unique
   [(sat? γ A) (true? (sat-subst γ A))])
-
-(define-metafunction sat-formulasL
-  sat-subst : γ A -> A
-  [(sat-subst γ A)
-   ,(subst/proc α? (map first (term γ)) (map second (term γ)) (term A))])
-
-(define-metafunction sat-formulasL
-  sat-assign : α c A -> A
-  [(sat-assign α c A) (sat-subst ((α c)) A)])
-
-(define-metafunction sat-formulasL
-  union : (α ...) (α ...) -> (α ...)
-  [(union any_0 any_1)
-   ,(set->list (set-union (list->set (term any_0))
-                          (list->set (term any_1))))])
 (module+ test
   (test-redex-equal (sat? ((α_1 T)) α_1) #t)
   (test-redex-equal (sat? ((α_1 F)) α_1) #f)
   (test-redex-equal (sat? ((α_0 T) (α_1 F)) (and α_0 α_1)) #f)
   (test-redex-equal (sat? ((α_0 T) (α_1 T)) (and α_0 α_1)) #t))
 
+;; Instantiate the open formula A with the substitution γ
+(define-metafunction sat-formulasL
+  sat-subst : γ A -> A
+  [(sat-subst γ A)
+   ,(subst/proc α? (map first (term γ)) (map second (term γ)) (term A))])
+
+;; Replace α with c in A
+(define-metafunction sat-formulasL
+  sat-assign : α c A -> A
+  [(sat-assign α c A) (sat-subst ((α c)) A)])
+
+;; Union two sets of open variables
+(define-metafunction sat-formulasL
+  union : (α ...) (α ...) -> (α ...)
+  [(union any_0 any_1)
+   ,(set->list (set-union (list->set (term any_0))
+                          (list->set (term any_1))))])
+
 ;;------------------------------------------------------------------------
 
+;; A base language for proofs about sat or unsat formulas
 (define-extended-language base-proofL sat-formulasL
   (x variable-not-otherwise-mentioned)
   ;; TODO: FIX inj; needs {1,2} annotation for dynamic semantics
   (v x true (e e) (λ (x) e) (pair e e) (inj e))
   (e v (case e of (x e) (x e)) (fst e) (snd e) (e : A)))
 
+;; The size of a proof is roughly equal to the sum of the size of each
+;; subproof, and 1 for the trivial proof of true. Formally:
 (define-metafunction base-proofL
   base-proof-size : e -> natural
   [(base-proof-size x) 1]
@@ -196,7 +213,6 @@
   [(base-proof-size (e : A))
    (plus (base-proof-size e)
          (formula-size A))])
-
 (module+ test
   (test-redex-equal (base-proof-size (λ (x) true)) 2)
   (test-redex-equal (base-proof-size (λ (x) (λ (y) x))) 3)
@@ -204,15 +220,20 @@
   (test-redex-equal (base-proof-size (λ (x) (λ (y) (inj x)))) 4)
   (test-redex-equal (base-proof-size (true : T)) 2))
 
+;;------------------------------------------------------------------------
+
+;; A base language for verifying a given proof proves a given formula
 (define-extended-language base-verifyL base-proofL
   (Γ mt (x : A Γ)))
 
 ;; Bi-directional type checking for reduced annotations
 ;; Adapted to my weird setting from [1,2,3,4]; might be a little wrong.
-;; [1] http://www.mpi-sws.org/~joshua/bitype.pdf 
+;; [1] http://www.mpi-sws.org/~joshua/bitype.pdf
 ;; [2] http://itu.dk/people/drc/tutorials/bidirectional.pdf
 ;; [3] http://www.cis.upenn.edu/~bcpierce/papers/lti.pdf
 ;; [4] http://www.cs.cmu.edu/~fp/courses/15312-f04/handouts/15-bidirectional.pdf
+
+;; Check a proof prove a formula
 (define-judgment-form
   base-verifyL
   #:mode (check-base I I I)
@@ -270,6 +291,7 @@
    (check-base Γ (case e of (x_0 e_0) (x_1 e_1)) A_2)]
   )
 
+;; Given a proof, synthesize a formula that it proves
 (define-judgment-form
   base-verifyL
   #:mode (synth-base I I O)
@@ -327,6 +349,7 @@
    (synth-base Γ (case e of (x_0 e_0) (x_1 e_1)) A_2)]
   )
 
+;; A public facing name for verifying that a proof is a proof
 (define-judgment-form
   base-verifyL
   #:mode (verify-base I I I)
@@ -335,59 +358,6 @@
   [(check-base Γ e A)
    ----------------------
    (verify-base Γ e A)])
-
-
-#;(define-judgment-form
-  base-verifyL
-  #:mode (verify-base I I O)
-  #:contract (verify-base Γ e A)
-
-  [----------------------
-   (verify-base Γ true T)]
-
-  [(verify-base Γ e_0 A_0)
-   (verify-base Γ e_1 A_1)
-   ----------------------
-   (verify-base Γ (pair e_0 e_1) (and A_0 A_1))]
-
-  [(verify-base Γ e A_1)
-   ----------------------
-   (verify-base Γ (inj A_0 e) (or A_0 A_1))]
-
-  [(verify-base Γ e A_0)
-   ----------------------
-   (verify-base Γ (inj e A_1) (or A_0 A_1))]
-
-  [(verify-base (x : A Γ) e F)
-   ----------------------
-   (verify-base Γ (λ (x : A) e) (not A))]
-
-  [(verify-base Γ e_0 (not A))
-   (verify-base Γ e_1 A)
-   ----------------------
-   (verify-base Γ (e_0 e_1) F)]
-
-  [----------------------
-   (verify-base (x : A Γ) x A)]
-
-  [(verify-base Γ x_0 A_0)
-   (side-condition (different x_0 x_1))
-   ----------------------
-   (verify-base (x_1 : A_1 Γ) x_0 A_0)]
-
-  [(verify-base Γ e (and A_0 A_1))
-   ----------------------
-   (verify-base Γ (fst e) A_0)]
-
-  [(verify-base Γ e (and A_0 A_1))
-   ----------------------
-   (verify-base Γ (snd e) A_1)]
-
-  [(verify-base Γ e (or A_0 A_1))
-   (verify-base (x_0 : A_0 Γ) e_0 A_2)
-   (verify-base (x_1 : A_1 Γ) e_1 A_2)
-   ----------------------
-   (verify-base Γ (case e of (x_0 e_0) (x_1 e_1)) A_2)])
 
 (module+ test
   (require (only-in rackunit check-true))

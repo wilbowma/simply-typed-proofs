@@ -26,14 +26,14 @@
 (define-metafunction sat-proofL
   sat-proof-size : p -> natural
   [(sat-proof-size (pack (c p)))
-   ,(add1 (term (sat-proof-size p)))]
+   (plus 1 (sat-proof-size p))]
   [(sat-proof-size e)
    (base-proof-size e)])
 
 (define-metafunction sat-proofL
   qsat-formula-size : φ -> natural
   [(qsat-formula-size (∃ α φ))
-   ,(add1 (term (qsat-formula-size φ)))]
+   (plus 1 (qsat-formula-size φ))]
   [(qsat-formula-size A)
    (formula-size A)])
 

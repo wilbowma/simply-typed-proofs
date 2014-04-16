@@ -15,6 +15,7 @@
   true?
   reduce-formula
   gather-αs
+  plus
 
   sat-formulasL
   sat?
@@ -87,7 +88,6 @@
   (test-redex-equal (true? (or F T)) #t)
   (test-redex-equal (true? (not (and T F))) #t))
 
-
 ;;------------------------------------------------------------------------
 
 (define-extended-language sat-formulasL closed-formulasL
@@ -96,16 +96,20 @@
   (A .... α))
 
 (define-metafunction sat-formulasL
+  plus : natural ... -> natural
+  [(plus natural_0 ... ) ,(apply + (term (natural_0 ...)))])
+
+(define-metafunction sat-formulasL
   formula-size : A -> natural
   [(formula-size T) 1]
   [(formula-size F) 1]
   [(formula-size α) 1]
   [(formula-size (and A_1 A_2))
-   ,(+ (term (formula-size A_1)) (term (formula-size A_2)))]
+   (plus (formula-size A_1) (formula-size A_2))]
   [(formula-size (or A_1 A_2))
-   ,(+ (term (formula-size A_1)) (term (formula-size A_2)))]
+   (plus (formula-size A_1) (formula-size A_2))]
   [(formula-size (not A))
-   ,(add1 (term (formula-size A)))])
+   (plus 1 (formula-size A))])
 
 (module+ test
   (test-redex-equal (formula-size T) 1)
@@ -172,23 +176,33 @@
   [(base-proof-size x) 1]
   [(base-proof-size true) 1]
   [(base-proof-size (pair e_0 e_1))
-   (+ (base-proof-size e_0) (base-proof-size e_1))]
-  [(base-proof-size (inj A e))
-   (+ 1 (formula-size A) (base-proof-size e))]
-  [(base-proof-size (inj e A))
-   (+ 1 (formula-size A) (base-proof-size e))]
-  [(base-proof-size (λ (x : A) e))
-   (+ 1 (formula-size A) (base-proof-size e))]
+   (plus 1 (base-proof-size e_0) (base-proof-size e_1))]
+  [(base-proof-size (inj e))
+   (plus 1 (base-proof-size e))]
+  #;[(base-proof-size (inj e A))
+   (plus 1 (formula-size A) (base-proof-size e))]
+  [(base-proof-size (λ (x) e))
+   (plus 1 (base-proof-size e))]
   [(base-proof-size (e_0 e_1))
-   (+ (base-proof-size e_0) (base-proof-size e_1))]
+   (plus (base-proof-size e_0) (base-proof-size e_1))]
   [(base-proof-size (fst e))
-   (add1 (base-proof-size e))]
+   (plus 1 (base-proof-size e))]
   [(base-proof-size (snd e))
-   (add1 (base-proof-size e))]
+   (plus 1 (base-proof-size e))]
   [(base-proof-size (case e of (x e_1) (x e_2)))
-   (+ (base-proof-size e)
-      (base-proof-size e_1)
-      (base-proof-size e_2))])
+   (plus (base-proof-size e)
+         (base-proof-size e_1)
+         (base-proof-size e_2))]
+  [(base-proof-size (e : A))
+   (plus (base-proof-size e)
+         (formula-size A))])
+
+(module+ test
+  (test-redex-equal (base-proof-size (λ (x) true)) 2)
+  (test-redex-equal (base-proof-size (λ (x) (λ (y) x))) 3)
+  (test-redex-equal (base-proof-size (λ (x) (λ (y) (pair x y)))) 5)
+  (test-redex-equal (base-proof-size (λ (x) (λ (y) (inj x)))) 4)
+  (test-redex-equal (base-proof-size (true : T)) 2))
 
 (define-extended-language base-verifyL base-proofL
   (Γ mt (x : A Γ)))

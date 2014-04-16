@@ -21,8 +21,9 @@
 
 ;------------------------------------------------------------------------
 
+;; TODO: This entire section is nearly identical sat.rkt
 (define-extended-language unsat-proofL base-proofL
-  ;; TODO: remove (α) from Λ; unnecessary annotation?
+  ;; TODO?: remove (α) from Λ; unnecessary annotation
   (p ::= (Λ (α) p) e)
   (φ ::= (∀ α φ) (not A)))
 

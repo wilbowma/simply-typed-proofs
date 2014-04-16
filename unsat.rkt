@@ -22,9 +22,9 @@
 ;------------------------------------------------------------------------
 
 (define-extended-language unsat-proofL base-proofL
-  ;; TODO: remove (α) from Λ; unnecessary annotation
-  (p (Λ (α) p) e)
-  (φ (∀ α φ) (not A)))
+  ;; TODO: remove (α) from Λ; unnecessary annotation?
+  (p ::= (Λ (α) p) e)
+  (φ ::= (∀ α φ) (not A)))
 
 (define-metafunction unsat-proofL
   unsat-proof-size : p -> natural
@@ -73,7 +73,7 @@
 ;;------------------------------------------------------------------------
 
 (define-extended-language deltaL base-verifyL
-  (Δ mt (α Δ)))
+  (Δ ::= mt (α Δ)))
 
 (define-union-language verify-unsatL deltaL unsat-proofL)
 

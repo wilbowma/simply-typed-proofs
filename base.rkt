@@ -39,8 +39,8 @@
 
 ;; A (base) language of closed boolean formulas
 (define-language closed-formulasL
-  (c T F)
-  (A c (and A A) (or A A) (not A)))
+  (c ::= T F)
+  (A ::= c (and A A) (or A A) (not A)))
 
 ;; Language-level addition
 (define-metafunction closed-formulasL
@@ -104,9 +104,9 @@
 ;; A language of open boolean formulas, i.e., formulas with variables in
 ;; the clauses
 (define-extended-language sat-formulasL closed-formulasL
-  (α (variable-prefix α))
-  (γ ((α c) ...))
-  (A .... α))
+  (α ::= (variable-prefix α))
+  (γ ::= ((α c) ...))
+  (A ::= .... α))
 
 ;; The size of an open formula is roughly equal to the number of
 ;; variables plus the number of clauses. Formally:
@@ -181,10 +181,10 @@
 
 ;; A base language for proofs about sat or unsat formulas
 (define-extended-language base-proofL sat-formulasL
-  (x variable-not-otherwise-mentioned)
+  (x ::= variable-not-otherwise-mentioned)
   ;; TODO: FIX inj; needs {1,2} annotation for dynamic semantics
-  (v x true (e e) (λ (x) e) (pair e e) (inj e))
-  (e v (case e of (x e) (x e)) (fst e) (snd e) (e : A)))
+  (v ::= x true (e e) (λ (x) e) (pair e e) (inj e))
+  (e ::= v (case e of (x e) (x e)) (fst e) (snd e) (e : A)))
 
 ;; The size of a proof is roughly equal to the sum of the size of each
 ;; subproof, and 1 for the trivial proof of true. Formally:
@@ -224,7 +224,7 @@
 
 ;; A base language for verifying a given proof proves a given formula
 (define-extended-language base-verifyL base-proofL
-  (Γ mt (x : A Γ)))
+  (Γ ::= mt (x : A Γ)))
 
 ;; Bi-directional type checking for reduced annotations
 ;; Adapted to my weird setting from [1,2,3,4]; might be a little wrong.

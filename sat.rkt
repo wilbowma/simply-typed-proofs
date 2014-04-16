@@ -21,8 +21,8 @@
 ;------------------------------------------------------------------------
 
 (define-extended-language sat-proofL base-proofL
-  (p (pack (c p)) e)
-  (φ (∃ α φ) A))
+  (p ::= (pack (c p)) e)
+  (φ ::= (∃ α φ) A))
 
 (define-metafunction sat-proofL
   sat-proof-size : p -> natural

@@ -97,22 +97,22 @@
 (module+ test
   (require (only-in rackunit check-true))
   (check-true
-    (judgment-holds (verify-sat (pack (T (inj true F))) (∃ α (or α F)))))
+    (judgment-holds (verify-sat (pack (T (inj true))) (∃ α (or α F)))))
   (check-true
-    (judgment-holds (verify-sat (pack (F (λ (x : F) x))) (∃ α (not α)))))
+    (judgment-holds (verify-sat (pack (F (λ (x) x))) (∃ α (not α)))))
   (check-true
     (judgment-holds (verify-sat (pack (T true)) (∃ α α))))
 
 
   (check-true
-    (judgment-holds (verify-sat (pack (F (inj F (λ (x : F) x))))
+    (judgment-holds (verify-sat (pack (F (inj (λ (x) x))))
                             (∃ α (or α (not α))))))
   (check-true
-    (judgment-holds (verify-sat (pack (T (inj true (not T))))
+    (judgment-holds (verify-sat (pack (T (inj true)))
                             (∃ α (or α (not α))))))
 
-  (check-true (verifier-sat (pack (F (inj F (λ (x : F) x)))) (or α (not α))))
+  (check-true (verifier-sat (pack (F (inj (λ (x) x)))) (or α (not α))))
   (check-true
     (verifier-sat
-      (pack (F (λ (x : (and F (not F))) ((snd x) (fst x)))))
+      (pack (F (λ (x) ((snd x) (fst x)))))
       (not (and α (not α))))))

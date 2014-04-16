@@ -163,15 +163,15 @@
 
 (define-extended-language base-proofL sat-formulasL
   (x variable-not-otherwise-mentioned)
-  ;; TODO: Can bi-directional type-checking prevent these annotations?t ?
-  (v x true (e e) (λ (x : A) e) (pair e e) (inj A e) (inj e A))
-  (e v (case e of (x e) (x e)) (fst e) (snd e)))
+  ;; TODO: FIX inj; needs {1,2} annotation for dynamic semantics
+  (v x true (e e) (λ (x) e) (pair e e) (inj e))
+  (e v (case e of (x e) (x e)) (fst e) (snd e) (e : A)))
 
 (define-metafunction base-proofL
   base-proof-size : e -> natural
   [(base-proof-size x) 1]
   [(base-proof-size true) 1]
-  [(base-proof-size (pair e_0 e_1)) 
+  [(base-proof-size (pair e_0 e_1))
    (+ (base-proof-size e_0) (base-proof-size e_1))]
   [(base-proof-size (inj A e))
    (+ 1 (formula-size A) (base-proof-size e))]
@@ -186,14 +186,144 @@
   [(base-proof-size (snd e))
    (add1 (base-proof-size e))]
   [(base-proof-size (case e of (x e_1) (x e_2)))
-   (+ (base-proof-size e) 
+   (+ (base-proof-size e)
       (base-proof-size e_1)
       (base-proof-size e_2))])
 
 (define-extended-language base-verifyL base-proofL
   (Γ mt (x : A Γ)))
 
+;; Bi-directional type checking for reduced annotations
+;; Adapted to my weird setting from [1,2,3,4]; might be a little wrong.
+;; [1] http://www.mpi-sws.org/~joshua/bitype.pdf 
+;; [2] http://itu.dk/people/drc/tutorials/bidirectional.pdf
+;; [3] http://www.cis.upenn.edu/~bcpierce/papers/lti.pdf
+;; [4] http://www.cs.cmu.edu/~fp/courses/15312-f04/handouts/15-bidirectional.pdf
 (define-judgment-form
+  base-verifyL
+  #:mode (check-base I I I)
+  #:contract (check-base Γ e A)
+
+  [----------------------
+   (check-base Γ true T)]
+
+  [(check-base Γ e_0 A_0)
+   (check-base Γ e_1 A_1)
+   ----------------------
+   (check-base Γ (pair e_0 e_1) (and A_0 A_1))]
+
+  [(check-base Γ e A_1)
+   ----------------------
+   (check-base Γ (inj e) (or A_0 A_1))]
+
+  [(check-base Γ e A_0)
+   ----------------------
+   (check-base Γ (inj e) (or A_0 A_1))]
+
+  [(check-base (x : A Γ) e F)
+   ----------------------
+   (check-base Γ (λ (x) e) (not A))]
+
+  [(synth-base Γ e A)
+   ----------------------
+   (check-base Γ e A)]
+
+  [(synth-base Γ e_1 A)
+   (check-base Γ e_0 (not A))
+   ----------------------
+   (check-base Γ (e_0 e_1) F)]
+
+  #;[----------------------
+   (check-base (x : A Γ) x A)]
+
+  #;[(check-base Γ x_0 A_0)
+   (side-condition (different x_0 x_1))
+   ----------------------
+   (check-base (x_1 : A_1 Γ) x_0 A_0)]
+
+  [(synth-base Γ e (and A_0 A_1))
+   ----------------------
+   (check-base Γ (fst e) A_0)]
+
+  [(synth-base Γ e (and A_0 A_1))
+   ----------------------
+   (check-base Γ (snd e) A_1)]
+
+  [(synth-base Γ e (or A_0 A_1))
+   (check-base (x_0 : A_0 Γ) e_0 A_2)
+   (check-base (x_1 : A_1 Γ) e_1 A_2)
+   ----------------------
+   (check-base Γ (case e of (x_0 e_0) (x_1 e_1)) A_2)]
+  )
+
+(define-judgment-form
+  base-verifyL
+  #:mode (synth-base I I O)
+  #:contract (synth-base Γ e A)
+
+  [----------------------
+   (synth-base Γ true T)]
+
+  [(check-base Γ e A)
+   ----------------------
+   (synth-base Γ (e : A) A)]
+
+  [(synth-base Γ e_0 A_0)
+   (synth-base Γ e_1 A_1)
+   ----------------------
+   (synth-base Γ (pair e_0 e_1) (and A_0 A_1))]
+
+  #;[(synth-base Γ e A_1)
+   ----------------------
+   (synth-base Γ (inj A_0 e) (or A_0 A_1))]
+
+  #;[(synth-base Γ e A_0)
+   ----------------------
+   (synth-base Γ (inj e A_1) (or A_0 A_1))]
+
+  #;[(check-base (x : A Γ) e F)
+   ----------------------
+   (synth-base Γ (λ (x) e) (not A))]
+
+  [(synth-base Γ e_1 A)
+   (check-base Γ e_0 (not A))
+   ----------------------
+   (synth-base Γ (e_0 e_1) F)]
+
+  [----------------------
+   (synth-base (x : A Γ) x A)]
+
+  [(synth-base Γ x_0 A_0)
+   (side-condition (different x_0 x_1))
+   ----------------------
+   (synth-base (x_1 : A_1 Γ) x_0 A_0)]
+
+  [(synth-base Γ e (and A_0 A_1))
+   ----------------------
+   (synth-base Γ (fst e) A_0)]
+
+  [(synth-base Γ e (and A_0 A_1))
+   ----------------------
+   (synth-base Γ (snd e) A_1)]
+
+  [(synth-base Γ e (or A_0 A_1))
+   (synth-base (x_0 : A_0 Γ) e_0 A_2)
+   (synth-base (x_1 : A_1 Γ) e_1 A_2)
+   ----------------------
+   (synth-base Γ (case e of (x_0 e_0) (x_1 e_1)) A_2)]
+  )
+
+(define-judgment-form
+  base-verifyL
+  #:mode (verify-base I I I)
+  #:contract (verify-base Γ e A)
+
+  [(check-base Γ e A)
+   ----------------------
+   (verify-base Γ e A)])
+
+
+#;(define-judgment-form
   base-verifyL
   #:mode (verify-base I I O)
   #:contract (verify-base Γ e A)
@@ -248,25 +378,25 @@
 (module+ test
   (require (only-in rackunit check-true))
   (check-true (judgment-holds (verify-base mt true T)))
-  (check-true (judgment-holds (verify-base mt (λ (x : F) x) (not F))))
+  (check-true (judgment-holds (verify-base mt (λ (x) x) (not F))))
   (check-true
     (judgment-holds (verify-base mt (pair true true) (and T T))))
   (check-true
-    (judgment-holds (verify-base mt (pair true (λ (x : F) x))
-                                   (and T (not F)))))
+    (judgment-holds (verify-base mt (pair true (λ (x) x))
+                                 (and T (not F)))))
   (check-true
-    (judgment-holds (verify-base mt (inj T true) (or T T))))
+    (judgment-holds (verify-base mt (inj true) (or T T))))
   (check-true
-    (judgment-holds (verify-base mt (inj F true) (or F T))))
+    (judgment-holds (verify-base mt (inj true) (or F T))))
   (check-true
-    (judgment-holds (verify-base mt (inj true F) (or T F))))
+    (judgment-holds (verify-base mt (inj true) (or T F))))
   (check-true
-    (judgment-holds (verify-base mt (λ (x : (and T F)) (snd x))
+    (judgment-holds (verify-base mt (λ (x) (snd x))
                                    (not (and T F)))))
   (check-true
-    (judgment-holds 
+    (judgment-holds
       (verify-base mt
-        (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+        (λ (x)
            (case (fst (fst x)) of
              ;; not α_0
              (x_1 (x_1 (snd (fst x))))
@@ -280,6 +410,7 @@
   (E hole (fst E) (snd E) (case E (x e) (x e))))
 
 (define base-->
+  ;; TODO: FIX, when semantics needed
   (reduction-relation
     base-proofL-eval
     #:domain e
@@ -288,10 +419,12 @@
     (==> (snd (pair e_0 e_1)) e_1)
 
     (==> (case (inj A e) (x e_0) (x e_1))
-         (proof-subst x e e_0))
+         ,(error "Currently broken; inj need {1,2} annotation to fix")
+         #;(proof-subst x e e_0))
 
     (==> (case (inj e A) (x e_0) (x e_1))
-         (proof-subst x e e_1))
+         ,(error "Currently broken; inj need {1,2} annotation to fix")
+         #;(proof-subst x e e_1))
 
     with
     [(--> (in-hole E e_0) (in-hole E e_1))

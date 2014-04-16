@@ -134,13 +134,13 @@
 (module+ test
   (check-true
     (judgment-holds
-      (verify-unsat mt (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
+      (verify-unsat mt (Λ (α) (λ (x) ((snd x) (fst x))))
                     (∀ α (not (and α (not α)))))))
   (check-true
     (judgment-holds
       (verify-unsat
         mt
-        (Λ (α_0) (Λ (α_1) (λ (x : (and (or α_0 α_1) (and (not α_0) (not α_1))))
+        (Λ (α_0) (Λ (α_1) (λ (x)
                              (case (fst x) of
                                ;; α_0
                                (x_1 ((fst (snd x)) x_1))
@@ -151,7 +151,7 @@
     (judgment-holds
       (verify-unsat
         mt
-        (Λ (α_0) (Λ (α_1) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+        (Λ (α_0) (Λ (α_1) (λ (x)
                              (case (fst (fst x)) of
                                ;; not α_0
                                (x_1 (x_1 (snd (fst x))))
@@ -161,11 +161,11 @@
 
   (check-true
     (verifier-unsat
-      (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
+      (Λ (α) (λ (x) ((snd x) (fst x))))
       (and α (not α))))
   (check-true
     (verifier-unsat
-      (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+      (Λ (α_1) (Λ (α_0) (λ (x)
                            (case (fst (fst x)) of
                              ;; not α_0
                              (x_1 (x_1 (snd (fst x))))

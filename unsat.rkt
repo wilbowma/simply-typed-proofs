@@ -19,6 +19,7 @@
 ;------------------------------------------------------------------------
 
 (define-extended-language unsat-proofL base-proofL
+  ;; TODO: remove (α) from Λ; unnecessary annotation
   (p (Λ (α) p) e)
   (φ (∀ α φ) (not A)))
 
@@ -67,7 +68,7 @@
    (verify-formula (α Δ) α)]
 
   [(verify-formula Δ α_1)
-   (side-condition (different-α α_0 α_1))
+   (side-condition (different α_0 α_1))
    ----------------------
    (verify-formula (α_0 Δ) α_1)]
 
@@ -83,7 +84,11 @@
 
   [(verify-formula Δ A_0)
    ----------------------
-   (verify-formula Δ (not A_0))])
+   (verify-formula Δ (not A_0))]
+
+  [(verify-formula (α Δ) A_0)
+   ----------------------
+   (verify-formula Δ (∀ α A_0))])
 
 (module+ test
   (test-true (judgment-holds (verify-formula mt T)))
@@ -150,7 +155,7 @@
 
   (verifier-unsat (Λ (α) (λ (x : (and α (not α))) ((snd x) (fst x))))
                   (and α (not α)))
-  (verifier-unsat (Λ (α_0) (Λ (α_1) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
+  (verifier-unsat (Λ (α_1) (Λ (α_0) (λ (x : (and (and (or (not α_0) α_1) α_0) (not α_1)))
                                        (case (fst (fst x)) of
                                          ;; not α_0
                                          (x_1 (x_1 (snd (fst x))))

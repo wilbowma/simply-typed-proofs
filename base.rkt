@@ -23,8 +23,6 @@
   union
 
   base-proofL
-  different-x
-  different-α
 
   base-verifyL
   verify-base
@@ -107,8 +105,9 @@
    (gather-αs A_0)])
 
 (module+ test
-  (check (gather-αs (or α_0 α_1)) (α_0 α_1))
-  (check (gather-αs (and α_0 α_1)) (α_0 α_1))
+  ;; NB: These tests are order dependent
+  (check (gather-αs (or α_0 α_1)) (α_1 α_0))
+  (check (gather-αs (and α_0 α_1)) (α_1 α_0))
   (check (gather-αs (not α_0)) (α_0))
   (check (gather-αs (not F)) ()))
 
@@ -143,28 +142,9 @@
 
 (define-extended-language base-proofL sat-formulasL
   (x variable-not-otherwise-mentioned)
+  ;; TODO: Can bi-directional type-checking prevent these annotations??
   (v x true (e e) (λ (x : A) e) (pair e e) (inj A e) (inj e A))
   (e v (case e of (x e) (x e)) (fst e) (snd e)))
-
-(define-metafunction base-proofL
-  different-x : x x -> #t or #f
-  [(different-x x x) #t]
-  [(different-x x_0 x_1) #f])
-
-(define-metafunction base-proofL
-  different-α : α α -> #t or #f
-  [(different-α α α) #t]
-  [(different-α α_0 α_1) #f])
-
-(module+ test
-  (check (different-x x x) #t)
-  (check (different-x x_0 x_0) #t)
-  (check (different-x x_1 x_0) #f)
-
-  (check (different-α α α) #t)
-  (check (different-α α_0 α_0) #t)
-  (check (different-α α_1 α_0) #f))
-
 
 (define-extended-language base-verifyL base-proofL
   (Γ mt (x : A Γ)))

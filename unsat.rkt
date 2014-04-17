@@ -23,13 +23,12 @@
 
 ;; TODO: This entire section is nearly identical sat.rkt
 (define-extended-language unsat-proofL base-proofL
-  ;; TODO?: remove (α) from Λ; unnecessary annotation
-  (p ::= (Λ (α) p) e)
+  (p ::= (Λ p) e)
   (φ ::= (∀ α φ) (not A)))
 
 (define-metafunction unsat-proofL
   unsat-proof-size : p -> natural
-  [(unsat-proof-size (Λ (α) p))
+  [(unsat-proof-size (Λ p))
    (plus 1 (unsat-proof-size p))]
   [(unsat-proof-size e)
    (base-proof-size e)])
@@ -42,7 +41,7 @@
    (formula-size A)])
 
 (module+ test
-  (test-redex-equal (unsat-proof-size (Λ (α) true)) 2)
+  (test-redex-equal (unsat-proof-size (Λ true)) 2)
   (test-redex-equal (qunsat-formula-size (∀ α (not α))) 3))
 
 (define-metafunction unsat-proofL
@@ -151,48 +150,46 @@
 
   [(verify-unsat-q (α Δ) p φ)
    ----------------------
-   (verify-unsat-q Δ (Λ (α) p) (∀ α φ))])
+   (verify-unsat-q Δ (Λ p) (∀ α φ))])
 
 (module+ test
   (check-true
     (judgment-holds
-      (verify-unsat-q mt (Λ (α) (λ (x) ((snd x) (fst x))))
+      (verify-unsat-q mt (Λ (λ (x) ((snd x) (fst x))))
                     (∀ α (not (and α (not α)))))))
   (check-true
     (judgment-holds
       (verify-unsat-q
         mt
-        (Λ (α_0) (Λ (α_1) (λ (x)
-                             (case (fst x) of
-                               ;; α_0
-                               (x_1 ((fst (snd x)) x_1))
-                               ;; α_1
-                               (x_1 ((snd (snd x)) x_1))))))
+        (Λ (Λ (λ (x)
+                 (case (fst x) of
+                   ;; α_0
+                   (x_1 ((fst (snd x)) x_1))
+                   ;; α_1
+                   (x_1 ((snd (snd x)) x_1))))))
         (∀ α_0 (∀ α_1 (not (and (or α_0 α_1) (and (not α_0) (not α_1)))))))))
   (check-true
     (judgment-holds
       (verify-unsat-q
         mt
-        (Λ (α_0) (Λ (α_1) (λ (x)
-                             (case (fst (fst x)) of
-                               ;; not α_0
-                               (x_1 (x_1 (snd (fst x))))
-                               ;; α_1
-                               (x_1 ((snd x) x_1))))))
+        (Λ (Λ (λ (x)
+                 (case (fst (fst x)) of
+                   ;; not α_0
+                   (x_1 (x_1 (snd (fst x))))
+                   ;; α_1
+                   (x_1 ((snd x) x_1))))))
         (∀ α_0 (∀ α_1 (not (and (and (or (not α_0) α_1) α_0) (not α_1))))))))
 
   (check-true
     (verifier-unsat
-      (Λ (α) (λ (x) ((snd x) (fst x))))
+      (Λ (λ (x) ((snd x) (fst x))))
       (and α (not α))))
   (check-true
-    ;; TODO: This test can fail depending on the order in which quantify
-    ;; decides to generate.
     (verifier-unsat
-      (Λ (α_1) (Λ (α_0) (λ (x)
-                           (case (fst (fst x)) of
-                             ;; not α_0
-                             (x_1 (x_1 (snd (fst x))))
-                             ;; α_1
-                             (x_1 ((snd x) x_1))))))
+      (Λ (Λ (λ (x)
+               (case (fst (fst x)) of
+                 ;; not α_0
+                 (x_1 (x_1 (snd (fst x))))
+                 ;; α_1
+                 (x_1 ((snd x) x_1))))))
       (and (and (or (not α_0) α_1) α_0) (not α_1)))))

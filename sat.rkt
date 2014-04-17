@@ -71,45 +71,45 @@
 (define-union-language verify-satL base-verifyL sat-proofL)
 
 (define-syntax-rule (verifier-sat proof formula)
-  (judgment-holds (verify-sat-q proof formula)))
-
-(define-judgment-form
-  verify-satL
-  #:mode (verify-sat-q I I)
-  #:contract (verify-sat-q p A)
-
-  [(verify-sat p (sat-quantify A))
-   ----------------------
-   (verify-sat-q p A)])
+  (judgment-holds (verify-sat proof formula)))
 
 (define-judgment-form
   verify-satL
   #:mode (verify-sat I I)
-  #:contract (verify-sat p φ)
+  #:contract (verify-sat p A)
+
+  [(verify-sat-q p (sat-quantify A))
+   ----------------------
+   (verify-sat p A)])
+
+(define-judgment-form
+  verify-satL
+  #:mode (verify-sat-q I I)
+  #:contract (verify-sat-q p φ)
 
   [(verify-base mt e A)
    ----------------------
-   (verify-sat e A)]
+   (verify-sat-q e A)]
 
-  [(verify-sat p (qsat-assign α c φ))
+  [(verify-sat-q p (qsat-assign α c φ))
    ----------------------
-   (verify-sat (pack (c p)) (∃ α φ))])
+   (verify-sat-q (pack (c p)) (∃ α φ))])
 
 (module+ test
   (require (only-in rackunit check-true))
   (check-true
-    (judgment-holds (verify-sat (pack (T (inj true))) (∃ α (or α F)))))
+    (judgment-holds (verify-sat-q (pack (T (inj true))) (∃ α (or α F)))))
   (check-true
-    (judgment-holds (verify-sat (pack (F (λ (x) x))) (∃ α (not α)))))
+    (judgment-holds (verify-sat-q (pack (F (λ (x) x))) (∃ α (not α)))))
   (check-true
-    (judgment-holds (verify-sat (pack (T true)) (∃ α α))))
+    (judgment-holds (verify-sat-q (pack (T true)) (∃ α α))))
 
 
   (check-true
-    (judgment-holds (verify-sat (pack (F (inj (λ (x) x))))
+    (judgment-holds (verify-sat-q (pack (F (inj (λ (x) x))))
                             (∃ α (or α (not α))))))
   (check-true
-    (judgment-holds (verify-sat (pack (T (inj true)))
+    (judgment-holds (verify-sat-q (pack (T (inj true)))
                             (∃ α (or α (not α))))))
 
   (check-true (verifier-sat (pack (F (inj (λ (x) x)))) (or α (not α))))

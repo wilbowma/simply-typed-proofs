@@ -128,39 +128,39 @@
 ;;------------------------------------------------------------------------
 
 (define-syntax-rule (verifier-unsat proof formula)
-  (judgment-holds (verify-unsat-q proof formula)))
+  (judgment-holds (verify-unsat proof formula)))
 
 (define-judgment-form
   verify-unsatL
-  #:mode (verify-unsat-q I I)
-  #:contract (verify-unsat-q p A)
+  #:mode (verify-unsat I I)
+  #:contract (verify-unsat p A)
 
-  [(verify-unsat mt p (unsat-quantify A))
+  [(verify-unsat-q mt p (unsat-quantify A))
    ----------------------
-   (verify-unsat-q p A)])
+   (verify-unsat p A)])
 
 (define-judgment-form
   verify-unsatL
-  #:mode (verify-unsat I I I)
-  #:contract (verify-unsat Δ p φ)
+  #:mode (verify-unsat-q I I I)
+  #:contract (verify-unsat-q Δ p φ)
 
   [(verify-base mt e A)
    (verify-formula Δ A)
    ----------------------
-   (verify-unsat Δ e A)]
+   (verify-unsat-q Δ e A)]
 
-  [(verify-unsat (α Δ) p φ)
+  [(verify-unsat-q (α Δ) p φ)
    ----------------------
-   (verify-unsat Δ (Λ (α) p) (∀ α φ))])
+   (verify-unsat-q Δ (Λ (α) p) (∀ α φ))])
 
 (module+ test
   (check-true
     (judgment-holds
-      (verify-unsat mt (Λ (α) (λ (x) ((snd x) (fst x))))
+      (verify-unsat-q mt (Λ (α) (λ (x) ((snd x) (fst x))))
                     (∀ α (not (and α (not α)))))))
   (check-true
     (judgment-holds
-      (verify-unsat
+      (verify-unsat-q
         mt
         (Λ (α_0) (Λ (α_1) (λ (x)
                              (case (fst x) of
@@ -171,7 +171,7 @@
         (∀ α_0 (∀ α_1 (not (and (or α_0 α_1) (and (not α_0) (not α_1)))))))))
   (check-true
     (judgment-holds
-      (verify-unsat
+      (verify-unsat-q
         mt
         (Λ (α_0) (Λ (α_1) (λ (x)
                              (case (fst (fst x)) of
@@ -186,6 +186,8 @@
       (Λ (α) (λ (x) ((snd x) (fst x))))
       (and α (not α))))
   (check-true
+    ;; TODO: This test can fail depending on the order in which quantify
+    ;; decides to generate.
     (verifier-unsat
       (Λ (α_1) (Λ (α_0) (λ (x)
                            (case (fst (fst x)) of

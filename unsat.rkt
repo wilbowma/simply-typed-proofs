@@ -14,8 +14,11 @@
   qunsat-subst
   unsat-quantify
 
+  deltaL
+
   verify-unsatL
   verifier-unsat
+  verify-formula
   verify-unsat
   )
 

@@ -1,7 +1,7 @@
 #lang racket
 
 (require
-  "sat.rkt"
+  "unified.rkt"
   "proofs.rkt"
   "tactics.rkt"
   (only-in redex/reduction-semantics judgment-holds term))
@@ -24,22 +24,27 @@
     [(_ name : theorem proof)
      #'(define name
          (let ([x proof])
-           (if (verifier-sat ,x theorem)
+           (if (verify-unified ,x theorem)
              (pfenv '() x 'theorem)
              (error 'define-theorem "~s not defined: ~s is not a proof of ~s"
                     'name x 'theorem))))]))
 (module+ test
-  (check-true (verifier-sat true T))
+  (check-true (verify-unified true T))
   (define-theorem test1 : T 'true)
   (check-equal? (pfenv-term test1) 'true)
 
-  (define-theorem test2 : (not (and α (not α)))
+  (define-theorem test2 : (∃ α (not (and α (not α))))
     `(pack (F ,(qed (obvious (program hole '(not (and α (not α)))))))))
-  (check-true (pfenv? test2)))
+  (check-true (pfenv? test2))
+
+  (define-theorem test3 : (∀ α (not (and α (not α))))
+    `(Λ ,(qed (obvious (program hole '(not (and α (not α))))))))
+  (check-true (pfenv? test3)))
 
 ;; Motivating design by pretending to use the system.
+;; Pretend this isn't here
 #|
-(define-theorem example1 : (not (and α (not α)))
+(define-theorem example1 : (sat (not (and α (not α))))
   ;; Either I can write down a program
   `(λ (x) ((second x) (first x)))
 

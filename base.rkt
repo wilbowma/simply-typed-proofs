@@ -29,6 +29,8 @@
   base-proof-size
 
   base-verifyL
+  check-base
+  synth-base
   verify-base
 
   base-proofL-eval
@@ -317,7 +319,7 @@
    ----------------------
    (synth-base Γ (inj e A_1) (or A_0 A_1))]
 
-  #;[(check-base (x : A Γ) e F)
+  #;[(synth-base (x : A Γ) e F)
    ----------------------
    (synth-base Γ (λ (x) e) (not A))]
 

@@ -61,6 +61,7 @@
    ,(foldr (λ (α A) (term (∃ ,α ,A))) (term A) (term (gather-αs A)))])
 
 (module+ test
+  (test-redex-equal (sat-quantify T) T)
   (test-redex-equal (sat-quantify (not α)) (∃ α (not α)))
   (test-redex-equal (sat-quantify (or α (not α))) (∃ α (or α (not α))))
   (test-redex-equal
@@ -112,6 +113,7 @@
     (judgment-holds (verify-sat-q (pack (T (inj true)))
                             (∃ α (or α (not α))))))
 
+  (check-true (verifier-sat true T))
   (check-true (verifier-sat (pack (F (inj (λ (x) x)))) (or α (not α))))
   (check-true
     (verifier-sat

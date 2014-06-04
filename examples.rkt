@@ -29,4 +29,4 @@
   ;; tactic to try to pick a variable assignment yet, so we finish the
   ;; proof off manually.
   (define-theorem example3 : (not (and α (not α)))
-    `(pack (F ,(qed (obvious (program hole '(and T T))))))))
+    `(pack (F ,(qed (obvious (program hole '(not (and α (not α))))))))))

@@ -1,2 +1,2 @@
 all:
-	raco test {base,{un,}sat}.rkt
+	raco test *.rkt

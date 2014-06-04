@@ -64,6 +64,7 @@
   (test-redex-equal (sat-quantify T) T)
   (test-redex-equal (sat-quantify (not α)) (∃ α (not α)))
   (test-redex-equal (sat-quantify (or α (not α))) (∃ α (or α (not α))))
+  (printf "The following test may fail due to non-deterministically generated names~n")
   (test-redex-equal
     (sat-quantify (or α_1 (not α_0))) (∃ α_0 (∃ α_1 (or α_1 (not α_0))))))
 
